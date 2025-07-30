@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Day Scheduler</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+        
+        .screen {
+            display: none;
+            padding: 40px;
+            min-height: 500px;
+        }
+        
+        .screen.active {
+            display: block;
+        }
+        
+        .form-group {
+            margin-bottom: 25px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e1e1e1;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .checkbox-group input[type="checkbox"] {
+            width: auto;
+            transform: scale(1.2);
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: transform 0.2s;
+            margin: 10px 5px;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+        }
+        
+        .activity-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .activity-card {
+            border: 2px solid #e1e1e1;
+            border-radius: 8px;
+            padding: 15px;
+            background: #f8f9fa;
+        }
+        
+        .activity-card input, .activity-card select {
+            margin-bottom: 10px;
+        }
+        
+        .schedule-output {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 25px;
+            margin: 20px 0;
+            white-space: pre-wrap;
+            font-family: 'Courier New', monospace;
+            line-height: 1.6;
+        }
+        
+        .navigation {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 30px;
+        }
+        
+        .step-indicator {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 30px;
+        }
+        
+        .step {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: #e1e1e1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 10px;
+            font-weight: bold;
+            color: white;
+        }
+        
+        .step.active {
+            background: #667eea;
+        }
+        
+        .step.completed {
+            background: #28a745;
+        }
+        
+        .special-events {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        
+        .cycle-info {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+        }
+        
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🗓️ Smart Day Scheduler</h1>
+            <p>AI-powered personalized daily planning</p>
+        </div>
+        
+        <!-- Step 1: Basic Profile -->
+        <div class="screen active" id="screen1">
+            <div class="step-indicator">
+                <div class="step active">1</div>
+                <div class="step">2</div>
+                <div class="step">3</div>
+                <div class="step">4</div>
+                <div class="step">5</div>
+            </div>
+            
+            <h2>📝 Basic Profile Setup</h2>
+            <form id="profileForm">
+                <div class="form-group">
+                    <label>Work Hours per Day</label>
+                    <input type="number" id="workHours" value="6" min="1" max="12" required>
+                    <small>Remote work hours</small>
+                </div>
+                
+                <div class="form-group">
+                    <label>Study Hours per Day</label>
+                    <input type="number" id="studyHours" value="4" min="1" max="8" required>
+                    <small>Personal study/exam preparation</small>
+                </div>
+                
+                <div class="form-group">
+                    <label>Number of Household Chores</label>
+                    <input type="number" id="householdChores" value="12" min="5" max="20" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Sleep Hours Needed</label>
+                    <select id="sleepHours" required>
+                        <option value="7">7 hours</option>
+                        <option value="8" selected>8 hours</option>
+                        <option value="9">9 hours</option>
+                    </select>
+                </div>
+                
+                <div class="checkbox-group">
+                    <input type="checkbox" id="isFemale">
+                    <label for="isFemale">I am female (for cycle-based planning)</label>
+                </div>
+                
+                <div class="navigation">
+                    <div></div>
+                    <button type="button" class="btn" onclick="nextScreen()">Next: Activities →</button>
+                </div>
+            </form>
+        </div>
+        
+        <!-- Step 2: Activities -->
+        <div class="screen" id="screen2">
+            <div class="step-indicator">
+                <div class="step completed">1</div>
+                <div class="step active">2</div>
+                <div class="step">3</div>
+                <div class="step">4</div>
+                <div class="step">5</div>
+            </div>
+            
+            <h2>🎯 Leisure Activities</h2>
+            <p>Add activities you'd like included in your daily schedule:</p>
+            
+            <div class="activity-list" id="activityList">
+                <!-- Activities will be added dynamically -->
+            </div>
+            
+            <button type="button" class="btn btn-secondary" onclick="addActivity()">+ Add Activity</button>
+            
+            <div class="form-group">
+                <label>How many activities per day?</label>
+                <select id="activityCount">
+                    <option value="1" selected>1 activity</option>
+                    <option value="2">2 activities</option>
+                    <option value="3">3 activities</option>
+                </select>
+            </div>
+            
+            <div class="navigation">
+                <button type="button" class="btn btn-secondary" onclick="prevScreen()">← Back</button>
+                <button type="button" class="btn" onclick="nextScreen()">Next: Special Events →</button>
+            </div>
+        </div>
+        
+        <!-- Step 3: Special Events -->
+        <div class="screen" id="screen3">
+            <div class="step-indicator">
+                <div class="step completed">1</div>
+                <div class="step completed">2</div>
+                <div class="step active">3</div>
+                <div class="step">4</div>
+                <div class="step">5</div>
+            </div>
+            
+            <h2>📅 Today's Special Events</h2>
+            <p>Any special activities or constraints for today?</p>
+            
+            <div class="special-events">
+                <h3>🚌 Travel/Commute</h3>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="hasTravel">
+                    <label for="hasTravel">Traveling to office/other location</label>
+                </div>
+                <div class="form-group">
+                    <input type="text" id="travelRoute" placeholder="From - To (e.g., Home to Office)" disabled>
+                    <input type="time" id="travelTime" disabled>
+                    <input type="number" id="travelDuration" placeholder="Travel time (minutes)" disabled>
+                </div>
+            </div>
+            
+            <div class="special-events">
+                <h3>💪 Fitness</h3>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="hasGym">
+                    <label for="hasGym">Going to gym</label>
+                </div>
+                <div class="form-group">
+                    <select id="gymTime" disabled>
+                        <option>Morning (preferred)</option>
+                        <option>Afternoon</option>
+                        <option>Evening</option>
+                    </select>
+                    <input type="number" id="gymDuration" placeholder="Duration (minutes)" value="120" disabled>
+                </div>
+            </div>
+            
+            <div class="special-events">
+                <h3>🎓 Classes/Appointments</h3>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="hasClass">
+                    <label for="hasClass">Scheduled class/appointment</label>
+                </div>
+                <div class="form-group">
+                    <input type="text" id="className" placeholder="Class/appointment name" disabled>
+                    <input type="time" id="classTime" value="17:30" disabled>
+                    <input type="number" id="classDuration" placeholder="Duration (minutes)" value="120" disabled>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label>Day Type</label>
+                <select id="dayType">
+                    <option value="weekday" selected>Regular Weekday</option>
+                    <option value="weekend">Weekend</option>
+                    <option value="sunday">Sunday (study priority)</option>
+                </select>
+            </div>
+            
+            <div class="navigation">
+                <button type="button" class="btn btn-secondary" onclick="prevScreen()">← Back</button>
+                <button type="button" class="btn" onclick="checkCycleScreen()">Next →</button>
+            </div>
+        </div>
+        
+        <!-- Step 4: Female Cycle (conditional) -->
+        <div class="screen" id="screen4">
+            <div class="step-indicator">
+                <div class="step completed">1</div>
+                <div class="step completed">2</div>
+                <div class="step completed">3</div>
+                <div class="step active">4</div>
+                <div class="step">5</div>
+            </div>
+            
+            <h2>🌸 Cycle Information</h2>
+            <p>Help us optimize your schedule based on your natural rhythms:</p>
+            
+            <div class="cycle-info">
+                <div class="form-group">
+                    <label>What day of your cycle are you on?</label>
+                    <input type="number" id="cycleDay" min="1" max="35" placeholder="Day 1 = first day of period">
+                    <small>This helps us adjust energy-intensive activities</small>
+                </div>
+                
+                <div class="form-group">
+                    <label>How are you feeling today?</label>
+                    <select id="energyLevel">
+                        <option value="high">High energy - ready for challenges</option>
+                        <option value="medium" selected>Medium energy - normal day</option>
+                        <option value="low">Low energy - need gentle activities</option>
+                        <option value="pms">PMS symptoms - self-care focus</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="navigation">
+                <button type="button" class="btn btn-secondary" onclick="prevScreen()">← Back</button>
+                <button type="button" class="btn" onclick="generateSchedule()">Generate Schedule →</button>
+            </div>
+        </div>
+        
+        <!-- Step 5: Generated Schedule -->
+        <div class="screen" id="screen5">
+            <div class="step-indicator">
+                <div class="step completed">1</div>
+                <div class="step completed">2</div>
+                <div class="step completed">3</div>
+                <div class="step completed">4</div>
+                <div class="step active">5</div>
+            </div>
+            
+            <h2>✨ Your Personalized Schedule</h2>
+            <p>Generated by AI based on your preferences:</p>
+            
+            <div id="loadingDiv" class="loading" style="display: none;">
+                <div class="spinner"></div>
+                <p>Generating your personalized schedule...</p>
+            </div>
+            
+            <div id="errorDiv" class="error" style="display: none;">
+                <p id="errorMessage"></p>
+            </div>
+            
+            <div id="scheduleOutput" class="schedule-output" style="display: none;">
+                <!-- AI-generated schedule will appear here -->
+            </div>
+            
+            <div class="navigation">
+                <button type="button" class="btn btn-secondary" onclick="goToStart()">← Start Over</button>
+                <button type="button" class="btn" onclick="generateSchedule()" id="regenerateBtn" style="display: none;">🔄 Generate New</button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let currentScreen = 1;
+        const totalScreens = 5;
+        let activities = [];
+        let activityIdCounter = 1;
+        
+        function nextScreen() {
+            if (currentScreen < totalScreens) {
+                document.getElementById(`screen${currentScreen}`).classList.remove('active');
+                currentScreen++;
+                document.getElementById(`screen${currentScreen}`).classList.add('active');
+                updateStepIndicators();
+            }
+        }
+        
+        function prevScreen() {
+            if (currentScreen > 1) {
+                document.getElementById(`screen${currentScreen}`).classList.remove('active');
+                currentScreen--;
+                document.getElementById(`screen${currentScreen}`).classList.add('active');
+                updateStepIndicators();
+            }
+        }
+        
+        function updateStepIndicators() {
+            for (let i = 1; i <= totalScreens; i++) {
+                const step = document.querySelector(`.step:nth-child(${i})`);
+                if (i < currentScreen) {
+                    step.className = 'step completed';
+                } else if (i === currentScreen) {
+                    step.className = 'step active';
+                } else {
+                    step.className = 'step';
+                }
+            }
+        }
+        
+        function addActivity() {
+            activities.push({
+                id: activityIdCounter++,
+                name: '',
+                duration: 30,
+                preferred_time: 'any'
+            });
+            renderActivities();
+        }
+        
+        function removeActivity(id) {
+            activities = activities.filter(a => a.id !== id);
+            renderActivities();
+        }
+        
+        function renderActivities() {
+            const container = document.getElementById('activityList');
+            container.innerHTML = '';
+            
+            activities.forEach(activity => {
+                const card = document.createElement('div');
+                card.className = 'activity-card';
+                card.innerHTML = `
+                    <input type="text" placeholder="Activity name" value="${activity.name}" onchange="updateActivity(${activity.id}, 'name', this.value)">
+                    <input type="number" placeholder="Duration (minutes)" value="${activity.duration}" min="10" max="240" onchange="updateActivity(${activity.id}, 'duration', this.value)">
+                    <select onchange="updateActivity(${activity.id}, 'preferred_time', this.value)">
+                        <option value="any" ${activity.preferred_time === 'any' ? 'selected' : ''}>Any time</option>
+                        <option value="morning" ${activity.preferred_time === 'morning' ? 'selected' : ''}>Morning</option>
+                        <option value="afternoon" ${activity.preferred_time === 'afternoon' ? 'selected' : ''}>Afternoon</option>
+                        <option value="evening" ${activity.preferred_time === 'evening' ? 'selected' : ''}>Evening</option>
+                    </select>
+                    <button type="button" class="btn btn-secondary" onclick="removeActivity(${activity.id})">Remove</button>
+                `;
+                container.appendChild(card);
+            });
+            
+            if (activities.length === 0) {
+                addActivity(); // Always have at least one activity
+            }
+        }
+        
+        function updateActivity(id, field, value) {
+            const activity = activities.find(a => a.id === id);
+            if (activity) {
+                activity[field] = field === 'duration' ? parseInt(value) : value;
+            }
+        }
+        
+        function checkCycleScreen() {
+            const isFemale = document.getElementById('isFemale').checked;
+            
+            if (isFemale) {
+                nextScreen();
+            } else {
+                // Skip cycle screen, go directly to schedule generation
+                document.getElementById(`screen${currentScreen}`).classList.remove('active');
+                currentScreen = 5;
+                document.getElementById(`screen${currentScreen}`).classList.add('active');
+                updateStepIndicators();
+                generateSchedule();
+            }
+        }
+        
+        function collectFormData() {
+            const isFemale = document.getElementById('isFemale').checked;
+            let cycleDay = null;
+            let energyLevel = '';
+            
+            if (isFemale) {
+                const cycleDayValue = document.getElementById('cycleDay').value;
+                if (cycleDayValue) {
+                    cycleDay = parseInt(cycleDayValue);
+                }
+                energyLevel = document.getElementById('energyLevel').value;
+            }
+            
+            const specialEvents = [];
+            
+            // Travel event
+            if (document.getElementById('hasTravel').checked) {
+                specialEvents.push({
+                    type: 'travel',
+                    name: document.getElementById('travelRoute').value,
+                    start_time: document.getElementById('travelTime').value,
+                    duration_minutes: parseInt(document.getElementById('travelDuration').value) || 30
+                });
+            }
+            
+            // Gym event
+            if (document.getElementById('hasGym').checked) {
+                specialEvents.push({
+                    type: 'gym',
+                    preferred_time: document.getElementById('gymTime').value.toLowerCase(),
+                    duration_minutes: parseInt(document.getElementById('gymDuration').value) || 120,
+                    prep_time_minutes: 30
+                });
+            }
+            
+            // Class event
+            if (document.getElementById('hasClass').checked) {
+                specialEvents.push({
+                    type: 'class',
+                    name: document.getElementById('className').value,
+                    start_time: document.getElementById('classTime').value,
+                    duration_minutes: parseInt(document.getElementById('classDuration').value) || 120,
+                    prep_time_minutes: 30
+                });
+            }
+            
+            return {
+                user_profile: {
+                    work_hours: parseInt(document.getElementById('workHours').value),
+                    study_hours: parseInt(document.getElementById('studyHours').value),
+                    household_chores: parseInt(document.getElementById('householdChores').value),
+                    sleep_hours: parseInt(document.getElementById('sleepHours').value),
+                    is_female: isFemale,
+                    cycle_day: cycleDay
+                },
+                activities: activities.filter(a => a.name.trim() !== '').map(a => ({
+                    id: a.id,
+                    name: a.name,
+                    duration_minutes: a.duration,
+                    preferred_time: a.preferred_time,
+                    category: 'leisure'
+                })),
+                selected_activity_count: parseInt(document.getElementById('activityCount').value),
+                special_events: specialEvents,
+                day_type: document.getElementById('dayType').value,
+                energy_level: energyLevel
+            };
+        }
+        
+        async function generateSchedule() {
+            const loadingDiv = document.getElementById('loadingDiv');
+            const errorDiv = document.getElementById('errorDiv');
+            const scheduleOutput = document.getElementById('scheduleOutput');
+            const regenerateBtn = document.getElementById('regenerateBtn');
+            
+            // Show loading
+            loadingDiv.style.display = 'block';
+            errorDiv.style.display = 'none';
+            scheduleOutput.style.display = 'none';
+            regenerateBtn.style.display = 'none';
+            
+            try {
+                const formData = collectFormData();
+                
+                const response = await fetch('/api/generate-schedule', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(formData)
+                });
+                
+                const result = await response.json();
+                
+                loadingDiv.style.display = 'none';
+                
+                if (result.success) {
+                    scheduleOutput.textContent = result.schedule;
+                    scheduleOutput.style.display = 'block';
+                    regenerateBtn.style.display = 'inline-block';
+                } else {
+                    document.getElementById('errorMessage').textContent = result.message || 'Failed to generate schedule';
+                    errorDiv.style.display = 'block';
+                }
+            } catch (error) {
+                loadingDiv.style.display = 'none';
+                document.getElementById('errorMessage').textContent = 'Network error: ' + error.message;
+                errorDiv.style.display = 'block';
+            }
+        }
+        
+        function goToStart() {
+            currentScreen = 1;
+            document.querySelectorAll('.screen').forEach(screen => screen.classList.remove('active'));
+            document.getElementById('screen1').classList.add('active');
+            updateStepIndicators();
+        }
+        
+        // Event listeners for special events checkboxes
+        document.getElementById('hasTravel').addEventListener('change', function() {
+            const inputs = ['travelRoute', 'travelTime', 'travelDuration'];
+            inputs.forEach(id => {
+                document.getElementById(id).disabled = !this.checked;
+            });
+        });
+        
+        document.getElementById('hasGym').addEventListener('change', function() {
+            const inputs = ['gymTime', 'gymDuration'];
+            inputs.forEach(id => {
+                document.getElementById(id).disabled = !this.checked;
+            });
+        });
+        
+        document.getElementById('hasClass').addEventListener('change', function() {
+            const inputs = ['className', 'classTime', 'classDuration'];
+            inputs.forEach(id => {
+                document.getElementById(id).disabled = !this.checked;
+            });
+        });
+        
+        // Initialize with one activity
+        addActivity();
+    </script>
+</body>
+</html>
