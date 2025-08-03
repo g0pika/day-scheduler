@@ -135,14 +135,158 @@
             margin-bottom: 10px;
         }
         
+        /* Enhanced schedule output styles */
         .schedule-output {
             background: #f8f9fa;
-            border-radius: 8px;
+            border-radius: 12px;
             padding: 25px;
             margin: 20px 0;
-            white-space: pre-wrap;
-            font-family: 'Courier New', monospace;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             line-height: 1.6;
+            max-height: 600px;
+            overflow-y: auto;
+            border: 1px solid #e1e5e9;
+        }
+
+        .schedule-header {
+            color: #667eea;
+            font-size: 1.5em;
+            margin: 0 0 20px 0;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+            text-align: center;
+        }
+
+        .schedule-section {
+            color: #495057;
+            font-size: 1.2em;
+            margin: 25px 0 15px 0;
+            padding: 8px 12px;
+            background: linear-gradient(135deg, #667eea20, #764ba220);
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+
+        .task-item {
+            margin: 12px 0;
+            padding: 10px 15px;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+            transition: all 0.2s ease;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        .task-item:hover {
+            border-color: #667eea;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.1);
+            transform: translateY(-1px);
+        }
+
+        .task-label {
+            display: flex;
+            align-items: flex-start;
+            cursor: pointer;
+            gap: 12px;
+            margin: 0;
+            font-weight: normal;
+        }
+
+        .task-checkbox {
+            width: 18px;
+            height: 18px;
+            margin: 2px 0 0 0;
+            cursor: pointer;
+            accent-color: #667eea;
+            flex-shrink: 0;
+        }
+
+        .task-text {
+            flex: 1;
+            color: #495057;
+            line-height: 1.5;
+            transition: all 0.3s ease;
+        }
+
+        .task-text.completed {
+            text-decoration: line-through;
+            color: #6c757d;
+            opacity: 0.7;
+        }
+
+        .schedule-note {
+            margin: 15px 0;
+            padding: 12px 15px;
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 6px;
+            color: #856404;
+        }
+
+        .schedule-bullet {
+            margin: 8px 0 8px 20px;
+            color: #6c757d;
+            font-size: 0.95em;
+        }
+
+        .schedule-text {
+            margin: 10px 0;
+            color: #495057;
+            line-height: 1.6;
+        }
+
+        /* Progress indicator */
+        .schedule-progress {
+            position: sticky;
+            top: 0;
+            background: white;
+            padding: 10px 15px;
+            border-bottom: 1px solid #e9ecef;
+            margin: -25px -25px 20px -25px;
+            border-radius: 12px 12px 0 0;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: #e9ecef;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            width: 0%;
+            transition: width 0.3s ease;
+            border-radius: 3px;
+        }
+
+        .progress-text {
+            text-align: center;
+            margin-top: 8px;
+            font-size: 0.9em;
+            color: #6c757d;
+            font-weight: 500;
+        }
+
+        /* Scrollbar styling */
+        .schedule-output::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .schedule-output::-webkit-scrollbar-track {
+            background: #f1f3f4;
+            border-radius: 4px;
+        }
+
+        .schedule-output::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 4px;
+        }
+
+        .schedule-output::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
         }
         
         .navigation {
@@ -212,6 +356,26 @@
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
+        }
+
+        /* Mobile responsiveness */
+        @media (max-width: 768px) {
+            .schedule-output {
+                max-height: 500px;
+                padding: 20px;
+            }
+            
+            .task-item {
+                padding: 8px 12px;
+            }
+            
+            .schedule-header {
+                font-size: 1.3em;
+            }
+            
+            .schedule-section {
+                font-size: 1.1em;
+            }
         }
         
         .error {
@@ -399,9 +563,15 @@
             
             <div class="cycle-info">
                 <div class="form-group">
-                    <label>What day of your cycle are you on?</label>
-                    <input type="number" id="cycleDay" min="1" max="35" placeholder="Day 1 = first day of period">
-                    <small>This helps us adjust energy-intensive activities</small>
+                    <label>Current Cycle Phase</label>
+                    <select id="cyclePhase">
+                        <option value="">-- Select --</option>
+                        <option value="menstrual">Menstrual</option>
+                        <option value="follicular">Follicular</option>
+                        <option value="ovulatory">Ovulation</option>
+                        <option value="luteal">Luteal</option>
+                    </select>
+                    <small>Select the phase you are currently in</small>
                 </div>
                 
                 <div class="form-group">
@@ -556,15 +726,19 @@
         
         function collectFormData() {
             const isFemale = document.getElementById('isFemale').checked;
-            let cycleDay = null;
-            let energyLevel = '';
-            
+            let cyclePhase = '';
+            let energyLevel = 'medium'; // Default value
+
             if (isFemale) {
-                const cycleDayValue = document.getElementById('cycleDay').value;
-                if (cycleDayValue) {
-                    cycleDay = parseInt(cycleDayValue);
-                }
-                energyLevel = document.getElementById('energyLevel').value;
+                const cyclePhaseElement = document.getElementById('cyclePhase');
+                cyclePhase = cyclePhaseElement ? cyclePhaseElement.value : '';
+
+                const energyLevelElement = document.getElementById('energyLevel');
+                energyLevel = energyLevelElement ? energyLevelElement.value : 'medium';
+
+                console.log('Is Female:', isFemale);
+                console.log('Cycle Phase:', cyclePhase);
+                console.log('Energy Level:', energyLevel);
             }
             
             const specialEvents = [];
@@ -600,14 +774,14 @@
                 });
             }
             
-            return {
+            const formData =  {
                 user_profile: {
                     work_hours: parseInt(document.getElementById('workHours').value),
                     study_hours: parseInt(document.getElementById('studyHours').value),
                     household_chores: parseInt(document.getElementById('householdChores').value),
                     sleep_hours: parseInt(document.getElementById('sleepHours').value),
                     is_female: isFemale,
-                    cycle_day: cycleDay
+                    cycle_phase: cyclePhase
                 },
                 activities: activities.filter(a => a.name.trim() !== '').map(a => ({
                     id: a.id,
@@ -621,13 +795,153 @@
                 day_type: document.getElementById('dayType').value,
                 energy_level: energyLevel
             };
+
+            console.log('Complete Form Data:', JSON.stringify(formData, null, 2));
+
+            return formData;
+        }
+
+        function parseScheduleToHTML(scheduleText) {
+            // Split the schedule into lines
+            const lines = scheduleText.split('\n');
+            let html = addProgressTracker();
+            let taskId = 0;
+            
+            for (let line of lines) {
+                line = line.trim();
+                
+                // Skip empty lines
+                if (!line) {
+                    html += '<br>';
+                    continue;
+                }
+                
+                // Handle headers (lines starting with ## or **text:**)
+                if (line.startsWith('##')) {
+                    const headerText = line.replace(/^##\s*/, '').replace(/\*\*/g, '');
+                    html += `<h2 class="schedule-header">${headerText}</h2>`;
+                    continue;
+                }
+                
+                // Handle section headers (**Morning:**, **Afternoon:**, etc.)
+                if (line.match(/^\*\*[^:]+:\*\*$/)) {
+                    const sectionText = line.replace(/\*\*/g, '');
+                    html += `<h3 class="schedule-section">${sectionText}</h3>`;
+                    continue;
+                }
+                
+                // Handle checkbox items (lines starting with [ ])
+                if (line.includes('[ ]')) {
+                    taskId++;
+                    // Extract the task content after [ ]
+                    const taskContent = line.replace(/^\*\*\s*/, '').replace(/\[ \]\s*/, '').replace(/\*\*/g, '');
+                    
+                    // Create checkbox HTML
+                    html += `
+                        <div class="task-item">
+                            <label class="task-label">
+                                <input type="checkbox" id="task-${taskId}" class="task-checkbox" onchange="saveTaskState(${taskId}, this.checked)">
+                                <span class="task-text">${taskContent}</span>
+                            </label>
+                        </div>
+                    `;
+                    continue;
+                }
+                
+                // Handle other formatted text (bold, notes, etc.)
+                if (line.startsWith('**') && line.endsWith('**')) {
+                    const listText = line.replace(/^[\*\-]\s*/, '');
+                    html += `<p class="schedule-note"><strong>${listText}</strong></p>`;
+                    continue;
+                }
+                
+                // Handle bullet points or list items
+                if (line.startsWith('*') || line.startsWith('-')) {
+                    const listText = line.replace(/^[\*\-]\s*/, '');
+                    html += `<p class="schedule-bullet">• ${listText}</p>`;
+                    continue;
+                }
+                
+                // Regular paragraphs
+                if (line.length > 0) {
+                    html += `<p class="schedule-text">${line}</p>`;
+                }
+            }
+            
+            return html;
+        }
+
+        function saveTaskState(taskId, isChecked) {
+            // Save the task state (you could use localStorage here if you want persistence)
+            const taskElement = document.getElementById(`task-${taskId}`);
+            const taskTextElement = taskElement.nextElementSibling;
+            
+            if (isChecked) {
+                taskTextElement.classList.add('completed');
+                console.log(`✅ Task ${taskId} completed`);
+            } else {
+                taskTextElement.classList.remove('completed');
+                console.log(`⬜ Task ${taskId} unchecked`);
+            }
+
+            updateProgress();
+        }
+
+        function updateProgress() {
+            const allCheckboxes = document.querySelectorAll('.task-checkbox');
+            const checkedCheckboxes = document.querySelectorAll('.task-checkbox:checked');
+            
+            if (allCheckboxes.length === 0) return;
+            
+            const percentage = Math.round((checkedCheckboxes.length / allCheckboxes.length) * 100);
+            
+            // Update progress bar
+            const progressFill = document.querySelector('.progress-fill');
+            const progressText = document.querySelector('.progress-text');
+            
+            if (progressFill && progressText) {
+                progressFill.style.width = percentage + '%';
+                progressText.textContent = `${checkedCheckboxes.length} of ${allCheckboxes.length} tasks completed (${percentage}%)`;
+            }
+            
+            // Celebration effect when 100% complete
+            if (percentage === 100) {
+                setTimeout(() => {
+                    alert('🎉 Congratulations! You\'ve completed all your tasks for today!');
+                }, 500);
+            }
+        }
+
+        function addProgressTracker() {
+            return `
+                <div class="schedule-progress">
+                    <div class="progress-bar">
+                        <div class="progress-fill"></div>
+                    </div>
+                    <div class="progress-text">0 of 0 tasks completed (0%)</div>
+                </div>
+            `;
         }
         
         async function generateSchedule() {
+            console.log('generateSchedule() called');
+
+            document.getElementById(`screen${currentScreen}`).classList.remove('active');
+            currentScreen = 5;
+            document.getElementById(`screen${currentScreen}`).classList.add('active');
+            updateStepIndicators();
+
             const loadingDiv = document.getElementById('loadingDiv');
             const errorDiv = document.getElementById('errorDiv');
             const scheduleOutput = document.getElementById('scheduleOutput');
             const regenerateBtn = document.getElementById('regenerateBtn');
+
+            // console.log('Navigated to screen: ', currentScreen);
+            // console.log('Elements found: ')
+            // console.log('  -  Loading Div:', loadingDiv);
+            // console.log('  -  Error Div:', errorDiv);
+            // console.log('  -  Schedule Output:', scheduleOutput);
+            // console.log('  -  Regenerate Button:', regenerateBtn);
             
             // Show loading
             loadingDiv.style.display = 'block';
@@ -636,6 +950,7 @@
             regenerateBtn.style.display = 'none';
             
             try {
+                // console.log('Generating schedule with form data...');
                 const formData = collectFormData();
                 
                 const response = await fetch('/api/generate-schedule', {
@@ -645,20 +960,44 @@
                     },
                     body: JSON.stringify(formData)
                 });
+
+                console.log('Response Status:', response.status);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
                 
                 const result = await response.json();
+                console.log('Response data:', result);
                 
                 loadingDiv.style.display = 'none';
                 
                 if (result.success) {
-                    scheduleOutput.textContent = result.schedule;
+                    console.log('Schedule generated successfully');
+                    // console.log('Schedule content length:', result.schedule.length);
+                    // console.log('Schedule preview: ', result.schedule.slice(0, 100) + '...');
+
+                    const interactiveHTML = parseScheduleToHTML(result.schedule);
+
+                    scheduleOutput.innerHTML = interactiveHTML;
                     scheduleOutput.style.display = 'block';
                     regenerateBtn.style.display = 'inline-block';
+
+                    console.log('🔍 After setting schedule:');
+                    console.log(' interactive schedule created with checkboxes');
+                    // console.log('  - scheduleOutput.textContent length:', scheduleOutput.textContent.length);
+                    // console.log('  - scheduleOutput.style.display:', scheduleOutput.style.display);
+                    // console.log('  - scheduleOutput visibility:', window.getComputedStyle(scheduleOutput).display);
+            
                 } else {
+                    console.error('Error generating schedule:', result.message);
                     document.getElementById('errorMessage').textContent = result.message || 'Failed to generate schedule';
                     errorDiv.style.display = 'block';
                 }
             } catch (error) {
+                console.error('Error in generating schedule:', error);
+                // console.error('Error stack:', error.stack);
+
                 loadingDiv.style.display = 'none';
                 document.getElementById('errorMessage').textContent = 'Network error: ' + error.message;
                 errorDiv.style.display = 'block';

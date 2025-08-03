@@ -1,12 +1,12 @@
 package models
 
 type UserProfile struct {
-	WorkHours       int  `json:"work_hours"`
-	StudyHours      int  `json:"study_hours"`
-	HouseholdChores int  `json:"household_chores"`
-	SleepHours      int  `json:"sleep_hours"`
-	IsFemale        bool `json:"is_female"`
-	CycleDay        *int `json:"cycle_day,omitempty"`
+	WorkHours       int    `json:"work_hours"`
+	StudyHours      int    `json:"study_hours"`
+	HouseholdChores int    `json:"household_chores"`
+	SleepHours      int    `json:"sleep_hours"`
+	IsFemale        bool   `json:"is_female"`
+	CyclePhase      string `json:"cycle_phase,omitempty"`
 }
 
 type Activity struct {
