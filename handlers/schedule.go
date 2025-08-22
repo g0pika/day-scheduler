@@ -16,19 +16,7 @@ import (
 
 func GenerateSchedule(w http.ResponseWriter, r *http.Request) {
 	log.Println("GenerateSchedule called")
-
-	// Set CORS headers
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
-	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 	w.Header().Set("Content-Type", "application/json")
-
-	// Handle preflight OPTIONS request
-	if r.Method == http.MethodOptions {
-		log.Println("OPTIONS request received")
-		w.WriteHeader(http.StatusOK)
-		return
-	}
 
 	if r.Method != http.MethodPost {
 		log.Printf("Invalid method: %s", r.Method)

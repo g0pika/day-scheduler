@@ -10,6 +10,21 @@ import (
 	"github.com/joho/godotenv"
 )
 
+func corsMiddleware(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+		w.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
+		
+		if r.Method == "OPTIONS" {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+		
+		next(w, r)
+	}
+}
+
 func main() {
 	// Load environment variables
 	if err := godotenv.Load(); err != nil {
@@ -34,8 +49,11 @@ func main() {
 		http.ServeFile(w, r, indexPath)
 	})
 
-	// API routes
-	mux.HandleFunc("/api/generate-schedule", handlers.GenerateSchedule)
+	// API routes with CORS middleware
+	mux.HandleFunc("/api/generate-schedule", corsMiddleware(handlers.GenerateSchedule))
+
+	// NEW: Date division API endpoint
+	mux.HandleFunc("/api/calculate-date-divisions", corsMiddleware(handlers.CalculateDateDivisions))
 
 	// Health check endpoint
 	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
