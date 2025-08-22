@@ -29,11 +29,12 @@ Smart Day Scheduler is a Go-based web application that leverages Google's Gemini
 
 - **Backend**: Go 1.23.0
 - **AI Integration**: Google Gemini AI (gemini-1.5-flash model)
-- **Frontend**: Vanilla JavaScript, HTML5, CSS3
+- **Frontend**: React 18 with TypeScript
 - **Dependencies**:
   - `github.com/google/generative-ai-go` - Gemini AI SDK
   - `github.com/joho/godotenv` - Environment variable management
   - `google.golang.org/api` - Google API client
+  - React, TypeScript, Create React App
 
 ## 📦 Installation
 
@@ -50,28 +51,51 @@ git clone https://github.com/yourusername/day-scheduler.git
 cd day-scheduler
 ```
 
-2. **Install dependencies**:
+2. **Install backend dependencies**:
 ```bash
 go mod download
 ```
 
-3. **Set up environment variables**:
+3. **Install frontend dependencies**:
+```bash
+cd frontend
+npm install
+cd ..
+```
+
+4. **Set up environment variables**:
 Create a `.env` file in the project root:
 ```env
 GEMINI_API_KEY=your_gemini_api_key_here
 PORT=8080  # Optional, defaults to 8080
 ```
 
-4. **Run the application**:
+5. **Run the application**:
+
+For development (two separate terminals):
 ```bash
+# Terminal 1: Start Go backend
+go run main.go
+
+# Terminal 2: Start React frontend
+cd frontend
+npm start
+```
+
+For production:
+```bash
+# Build React app
+cd frontend
+npm run build
+cd ..
+
+# Run Go backend (serves built React app)
 go run main.go
 ```
 
-5. **Access the application**:
-Open your browser and navigate to:
-```
-http://localhost:8080
-```
+6. **Access the application**:
+- Development: http://localhost:3000 (React dev server)
+- Production: http://localhost:8080 (Go server)
 
 ## 🏗️ Architecture
 
@@ -93,8 +117,24 @@ day-scheduler/
 │   ├── types.go            # Core data models
 │   └── date_divider.go    # Date division models
 │
-└── static/                 # Frontend assets
-    └── index.html          # Single-page application UI
+├── static/                 # Legacy frontend (kept for backup)
+│   └── index.html          # Original single-page app
+│
+└── frontend/               # React TypeScript frontend
+    ├── public/             # Static assets
+    ├── src/
+    │   ├── components/     # React components
+    │   │   ├── StepIndicator.tsx
+    │   │   ├── ProfileSetup.tsx
+    │   │   ├── ActivitiesSetup.tsx
+    │   │   ├── SpecialEventsSetup.tsx
+    │   │   ├── CycleInfo.tsx
+    │   │   └── ScheduleDisplay.tsx
+    │   ├── types.ts        # TypeScript interfaces
+    │   ├── App.tsx         # Main app component
+    │   └── App.css         # Styles
+    ├── package.json
+    └── tsconfig.json
 ```
 
 ### Component Overview
@@ -124,12 +164,14 @@ day-scheduler/
 
 #### Frontend Components
 
-The single-page application (`static/index.html`) features:
-- **Multi-step Form Wizard**: 5-screen progressive data collection
-- **Dynamic Activity Management**: Add/remove leisure activities
-- **Interactive Schedule Display**: Checkboxes for task completion
-- **Progress Tracking**: Visual progress bar with percentage
-- **Responsive Design**: Mobile-friendly interface
+The React TypeScript application features:
+- **StepIndicator**: Progress indicator showing current step
+- **ProfileSetup**: Basic user profile configuration
+- **ActivitiesSetup**: Activity list input with markdown checkbox parsing
+- **SpecialEventsSetup**: One-time events and appointments
+- **CycleInfo**: Female cycle-aware scheduling options
+- **ScheduleDisplay**: Interactive schedule with checkboxes and progress tracking
+- **Responsive Design**: Mobile-friendly interface with modern UI
 
 ### API Endpoints
 
@@ -170,7 +212,19 @@ The application can be customized by modifying:
 ## 📝 Usage
 
 1. **Basic Profile**: Set work hours, study hours, household chores, and sleep requirements
-2. **Activities**: Add leisure activities with duration and preferred timing
+2. **Activities**: Paste your activity list in checkbox format:
+   ```
+   - [ ] Try a Piña Colada
+   - [ ] Opt for White Sneakers
+   - [ ] Experiment with Basil Hummus
+   - [ ] Try a new coffee blend
+   ```
+   Or just list them plainly:
+   ```
+   painting
+   build dioramas
+   start a new book series
+   ```
 3. **Special Events**: Include one-time events like gym, classes, or travel
 4. **Cycle Information** (optional): For female users, specify cycle phase and energy level
 5. **Generate**: Click generate to receive your personalized schedule

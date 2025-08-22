@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Activity } from '../types';
 
 interface ActivitiesSetupProps {
@@ -18,15 +18,45 @@ const ActivitiesSetup: React.FC<ActivitiesSetupProps> = ({
   onNext,
   onBack,
 }) => {
-  const addActivity = () => {
-    const newId = Math.max(...activities.map(a => a.id), 0) + 1;
-    setActivities([...activities, {
-      id: newId,
-      name: '',
-      duration: 30,
-      preferredTime: 'any',
-      category: 'leisure',
-    }]);
+  const [activityText, setActivityText] = useState('');
+  const [defaultDuration, setDefaultDuration] = useState(30);
+  const [defaultTime, setDefaultTime] = useState<'any' | 'morning' | 'afternoon' | 'evening'>('any');
+
+  const parseActivities = () => {
+    // Parse the text input for activities in markdown checkbox format
+    const lines = activityText.split('\n');
+    const parsedActivities: Activity[] = [];
+    let idCounter = 1;
+
+    lines.forEach(line => {
+      // Match patterns like "- [ ] activity" or "* [ ] activity" or just "activity"
+      const trimmed = line.trim();
+      let activityName = '';
+      
+      if (trimmed.startsWith('- [ ]') || trimmed.startsWith('* [ ]')) {
+        activityName = trimmed.replace(/^[-*]\s*\[\s*\]\s*/, '').trim();
+      } else if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
+        activityName = trimmed.replace(/^[-*]\s*/, '').trim();
+      } else if (trimmed.startsWith('[ ]')) {
+        activityName = trimmed.replace(/^\[\s*\]\s*/, '').trim();
+      } else if (trimmed) {
+        activityName = trimmed;
+      }
+
+      if (activityName) {
+        parsedActivities.push({
+          id: idCounter++,
+          name: activityName,
+          duration: defaultDuration,
+          preferredTime: defaultTime,
+          category: 'leisure',
+        });
+      }
+    });
+
+    if (parsedActivities.length > 0) {
+      setActivities(parsedActivities);
+    }
   };
 
   const removeActivity = (id: number) => {
@@ -41,68 +71,112 @@ const ActivitiesSetup: React.FC<ActivitiesSetupProps> = ({
     ));
   };
 
-  React.useEffect(() => {
-    if (activities.length === 0) {
-      addActivity();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   return (
     <div className="screen active">
       <h2>🎯 Leisure Activities</h2>
-      <p>Add activities you'd like included in your daily schedule:</p>
+      <p>Paste or type your activities (one per line):</p>
 
-      <div className="activity-list">
-        {activities.map(activity => (
-          <div key={activity.id} className="activity-card">
-            <input
-              type="text"
-              placeholder="Activity name"
-              value={activity.name}
-              onChange={(e) => updateActivity(activity.id, 'name', e.target.value)}
-            />
+      <div className="form-group">
+        <label>Activity List</label>
+        <textarea
+          className="activity-textarea"
+          placeholder={`Enter activities like:
+- [ ] Try a Piña Colada
+- [ ] Opt for White Sneakers
+- [ ] Experiment with Basil Hummus
+- [ ] Try a new coffee blend
+- [ ] Plan a virtual movie night
+
+Or just list them:
+painting
+build dioramas
+start a new book series`}
+          value={activityText}
+          onChange={(e) => setActivityText(e.target.value)}
+          rows={10}
+        />
+        
+        <div className="activity-defaults">
+          <div className="default-setting">
+            <label>Default Duration (minutes):</label>
             <input
               type="number"
-              placeholder="Duration (minutes)"
-              value={activity.duration}
+              value={defaultDuration}
+              onChange={(e) => setDefaultDuration(parseInt(e.target.value))}
               min="10"
               max="240"
-              onChange={(e) => updateActivity(activity.id, 'duration', e.target.value)}
             />
+          </div>
+          <div className="default-setting">
+            <label>Default Time:</label>
             <select
-              value={activity.preferredTime}
-              onChange={(e) => updateActivity(activity.id, 'preferredTime', e.target.value)}
+              value={defaultTime}
+              onChange={(e) => setDefaultTime(e.target.value as any)}
             >
               <option value="any">Any time</option>
               <option value="morning">Morning</option>
               <option value="afternoon">Afternoon</option>
               <option value="evening">Evening</option>
             </select>
-            <button
-              type="button"
-              className="btn btn-secondary"
-              onClick={() => removeActivity(activity.id)}
-            >
-              Remove
-            </button>
           </div>
-        ))}
+        </div>
+        
+        <button type="button" className="btn btn-secondary" onClick={parseActivities}>
+          Parse Activities
+        </button>
       </div>
 
-      <button type="button" className="btn btn-secondary" onClick={addActivity}>
-        + Add Activity
-      </button>
+      {activities.length > 0 && (
+        <>
+          <h3>Parsed Activities ({activities.length}):</h3>
+          <div className="activity-list">
+            {activities.map(activity => (
+              <div key={activity.id} className="activity-card">
+                <div className="activity-name">{activity.name}</div>
+                <div className="activity-controls">
+                  <input
+                    type="number"
+                    placeholder="Duration"
+                    value={activity.duration}
+                    min="10"
+                    max="240"
+                    onChange={(e) => updateActivity(activity.id, 'duration', e.target.value)}
+                  />
+                  <select
+                    value={activity.preferredTime}
+                    onChange={(e) => updateActivity(activity.id, 'preferredTime', e.target.value)}
+                  >
+                    <option value="any">Any time</option>
+                    <option value="morning">Morning</option>
+                    <option value="afternoon">Afternoon</option>
+                    <option value="evening">Evening</option>
+                  </select>
+                  <button
+                    type="button"
+                    className="btn btn-secondary small"
+                    onClick={() => removeActivity(activity.id)}
+                  >
+                    ×
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
 
       <div className="form-group">
-        <label>How many activities per day?</label>
+        <label>How many activities to include per day?</label>
         <select
           value={selectedActivityCount}
           onChange={(e) => setSelectedActivityCount(parseInt(e.target.value))}
         >
-          <option value="1">1 activity</option>
-          <option value="2">2 activities</option>
-          <option value="3">3 activities</option>
+          {[...Array(Math.min(10, activities.length || 1))].map((_, i) => (
+            <option key={i + 1} value={i + 1}>
+              {i + 1} {i === 0 ? 'activity' : 'activities'}
+            </option>
+          ))}
         </select>
       </div>
 
