@@ -41,13 +41,14 @@ Smart Day Scheduler is a Go-based web application that leverages Google's Gemini
 ### Prerequisites
 
 - Go 1.23.0 or higher
+- Node.js and npm
 - Google Gemini API key
 
 ### Setup Instructions
 
 1. **Clone the repository**:
 ```bash
-git clone https://github.com/yourusername/day-scheduler.git
+git clone https://github.com/g0pika/day-scheduler.git
 cd day-scheduler
 ```
 
