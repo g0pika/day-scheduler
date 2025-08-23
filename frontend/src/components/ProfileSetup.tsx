@@ -22,8 +22,7 @@ const ProfileSetup: React.FC<ProfileSetupProps> = ({ userProfile, setUserProfile
             type="number"
             value={userProfile.workHours}
             onChange={(e) => handleInputChange('workHours', parseInt(e.target.value))}
-            min="1"
-            max="12"
+            min="0"
             required
           />
           <small>Remote work hours</small>
@@ -35,8 +34,7 @@ const ProfileSetup: React.FC<ProfileSetupProps> = ({ userProfile, setUserProfile
             type="number"
             value={userProfile.studyHours}
             onChange={(e) => handleInputChange('studyHours', parseInt(e.target.value))}
-            min="1"
-            max="8"
+            min="0"
             required
           />
           <small>Personal study/exam preparation</small>
@@ -48,8 +46,7 @@ const ProfileSetup: React.FC<ProfileSetupProps> = ({ userProfile, setUserProfile
             type="number"
             value={userProfile.householdChores}
             onChange={(e) => handleInputChange('householdChores', parseInt(e.target.value))}
-            min="5"
-            max="20"
+            min="0"
             required
           />
         </div>
