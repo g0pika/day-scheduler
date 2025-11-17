@@ -15,6 +15,8 @@
 go.work
 
 # Environment variables
+backend/.env
+frontend/.env
 .env
 
 # macOS
@@ -26,23 +28,19 @@ go.work
 *.swp
 *.swo
 
-# React / Node
-frontend/node_modules/
-frontend/.pnp
-frontend/.pnp.js
-frontend/coverage/
+# Node modules
+node_modules/
+
+# Frontend build
 frontend/build/
-frontend/.env.local
-frontend/.env.development.local
-frontend/.env.test.local
-frontend/.env.production.local
-frontend/npm-debug.log*
-frontend/yarn-debug.log*
-frontend/yarn-error.log*
+frontend/dist/
 
 # Temporary files
 *.tmp
 *.log
 
 # Build artifacts
-day-scheduler
+backend/day-scheduler
+backend/day-scheduler-server
+test-build
+test-compile

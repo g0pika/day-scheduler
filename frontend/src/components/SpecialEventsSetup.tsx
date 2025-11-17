@@ -1,11 +1,14 @@
-import React, { useState } from 'react';
-import { SpecialEvent } from '../types';
+import React, { useState, useEffect } from 'react';
+import { SpecialEvent, CalendarEvent } from '../types';
+import { initializeGoogleAPI, signInAndFetchEvents } from '../services/googleCalendar';
 
 interface SpecialEventsSetupProps {
   specialEvents: SpecialEvent[];
   setSpecialEvents: React.Dispatch<React.SetStateAction<SpecialEvent[]>>;
-  dayType: string;
-  setDayType: React.Dispatch<React.SetStateAction<string>>;
+  scheduleDate: string;
+  setScheduleDate: React.Dispatch<React.SetStateAction<string>>;
+  calendarEvents: CalendarEvent[];
+  setCalendarEvents: React.Dispatch<React.SetStateAction<CalendarEvent[]>>;
   onNext: () => void;
   onBack: () => void;
 }
@@ -13,12 +16,17 @@ interface SpecialEventsSetupProps {
 const SpecialEventsSetup: React.FC<SpecialEventsSetupProps> = ({
   specialEvents,
   setSpecialEvents,
-  dayType,
-  setDayType,
+  scheduleDate,
+  setScheduleDate,
+  calendarEvents,
+  setCalendarEvents,
   onNext,
   onBack,
 }) => {
   const [hasTravel, setHasTravel] = useState(false);
+  const [isLoadingCalendar, setIsLoadingCalendar] = useState(false);
+  const [calendarError, setCalendarError] = useState<string>('');
+  const [googleApiReady, setGoogleApiReady] = useState(false);
   const [travelRoute, setTravelRoute] = useState('');
   const [travelTime, setTravelTime] = useState('');
   const [travelDuration, setTravelDuration] = useState(30);
@@ -31,6 +39,36 @@ const SpecialEventsSetup: React.FC<SpecialEventsSetupProps> = ({
   const [className, setClassName] = useState('');
   const [classTime, setClassTime] = useState('17:30');
   const [classDuration, setClassDuration] = useState(120);
+
+  useEffect(() => {
+    // Initialize Google API when component mounts
+    initializeGoogleAPI()
+      .then(() => {
+        setGoogleApiReady(true);
+      })
+      .catch((error) => {
+        console.error('Failed to initialize Google API:', error);
+        setCalendarError('Failed to initialize Google Calendar integration');
+      });
+  }, []);
+
+  const handleFetchCalendarEvents = async () => {
+    setIsLoadingCalendar(true);
+    setCalendarError('');
+
+    try {
+      const events = await signInAndFetchEvents(scheduleDate);
+      setCalendarEvents(events);
+      if (events.length === 0) {
+        setCalendarError('No events found for this date');
+      }
+    } catch (error: any) {
+      console.error('Error fetching calendar events:', error);
+      setCalendarError(error.message || 'Failed to fetch calendar events. Please try again.');
+    } finally {
+      setIsLoadingCalendar(false);
+    }
+  };
 
   const handleNext = () => {
     const events: SpecialEvent[] = [];
@@ -69,8 +107,48 @@ const SpecialEventsSetup: React.FC<SpecialEventsSetupProps> = ({
 
   return (
     <div className="screen active">
-      <h2>📅 Today's Special Events</h2>
-      <p>Any special activities or constraints for today?</p>
+      <h2>📅 Schedule Setup</h2>
+
+      <div className="form-group">
+        <label>Which day are you scheduling for?</label>
+        <input
+          type="date"
+          value={scheduleDate}
+          onChange={(e) => setScheduleDate(e.target.value)}
+          min={new Date().toISOString().split('T')[0]}
+        />
+        <small>Usually for tomorrow or future days</small>
+      </div>
+
+      <div className="form-group">
+        <label>📅 Google Calendar Integration</label>
+        <button
+          type="button"
+          className="btn"
+          onClick={handleFetchCalendarEvents}
+          disabled={isLoadingCalendar || !googleApiReady}
+        >
+          {isLoadingCalendar ? 'Fetching...' : 'Fetch Calendar Events'}
+        </button>
+        {calendarError && <p className="error-text">{calendarError}</p>}
+        {calendarEvents.length > 0 && (
+          <div className="calendar-events">
+            <h4>Found {calendarEvents.length} calendar event(s):</h4>
+            {calendarEvents.map((event) => (
+              <div key={event.id} className="calendar-event-item">
+                <strong>{event.summary}</strong>
+                {event.start.dateTime && (
+                  <span> - {new Date(event.start.dateTime).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })} to {new Date(event.end.dateTime!).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</span>
+                )}
+                {event.location && <span> @ {event.location}</span>}
+              </div>
+            ))}
+            <small>✓ These meetings will be avoided when scheduling</small>
+          </div>
+        )}
+      </div>
+
+      <p>Any special activities or constraints for this day?</p>
 
       <div className="special-events">
         <h3>🚌 Travel/Commute</h3>
@@ -124,6 +202,7 @@ const SpecialEventsSetup: React.FC<SpecialEventsSetupProps> = ({
             onChange={(e) => setGymTime(e.target.value)}
             disabled={!hasGym}
           >
+            <option>Any time</option>
             <option>Morning (preferred)</option>
             <option>Afternoon</option>
             <option>Evening</option>
@@ -171,15 +250,6 @@ const SpecialEventsSetup: React.FC<SpecialEventsSetupProps> = ({
             disabled={!hasClass}
           />
         </div>
-      </div>
-
-      <div className="form-group">
-        <label>Day Type</label>
-        <select value={dayType} onChange={(e) => setDayType(e.target.value)}>
-          <option value="weekday">Regular Weekday</option>
-          <option value="weekend">Weekend</option>
-          <option value="sunday">Sunday (study priority)</option>
-        </select>
       </div>
 
       <div className="navigation">

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 
 interface ScheduleDisplayProps {
   schedule: string;
+  prompt: string;
   isLoading: boolean;
   error: string;
   onRegenerate: () => void;
@@ -16,6 +17,7 @@ interface Task {
 
 const ScheduleDisplay: React.FC<ScheduleDisplayProps> = ({
   schedule,
+  prompt,
   isLoading,
   error,
   onRegenerate,
@@ -23,6 +25,7 @@ const ScheduleDisplay: React.FC<ScheduleDisplayProps> = ({
 }) => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [completedCount, setCompletedCount] = useState(0);
+  const [showPrompt, setShowPrompt] = useState(false);
 
   useEffect(() => {
     if (schedule) {
@@ -153,8 +156,8 @@ const ScheduleDisplay: React.FC<ScheduleDisplayProps> = ({
     return elements;
   };
 
-  const progressPercentage = tasks.length > 0 
-    ? Math.round((completedCount / tasks.length) * 100) 
+  const progressPercentage = tasks.length > 0
+    ? Math.round((completedCount / tasks.length) * 100)
     : 0;
 
   return (
@@ -191,6 +194,35 @@ const ScheduleDisplay: React.FC<ScheduleDisplayProps> = ({
             </div>
           )}
           {renderScheduleHTML()}
+        </div>
+      )}
+
+      {prompt && !isLoading && (
+        <div className="prompt-section">
+          <button
+            type="button"
+            className="btn btn-secondary"
+            onClick={() => setShowPrompt(!showPrompt)}
+            style={{ marginTop: '20px', width: '100%' }}
+          >
+            {showPrompt ? '▼ Hide AI Prompt' : '▶ View AI Prompt'}
+          </button>
+          {showPrompt && (
+            <div className="prompt-display" style={{
+              marginTop: '10px',
+              padding: '15px',
+              backgroundColor: '#f5f5f5',
+              borderRadius: '5px',
+              whiteSpace: 'pre-wrap',
+              fontFamily: 'monospace',
+              fontSize: '12px',
+              maxHeight: '400px',
+              overflowY: 'auto',
+              border: '1px solid #ddd'
+            }}>
+              {prompt}
+            </div>
+          )}
         </div>
       )}
 

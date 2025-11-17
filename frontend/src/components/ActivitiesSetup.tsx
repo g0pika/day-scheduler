@@ -19,8 +19,6 @@ const ActivitiesSetup: React.FC<ActivitiesSetupProps> = ({
   onBack,
 }) => {
   const [activityText, setActivityText] = useState('');
-  const [defaultDuration, setDefaultDuration] = useState(30);
-  const [defaultTime, setDefaultTime] = useState<'any' | 'morning' | 'afternoon' | 'evening'>('any');
 
   const parseActivities = () => {
     // Parse the text input for activities in markdown checkbox format
@@ -47,8 +45,6 @@ const ActivitiesSetup: React.FC<ActivitiesSetupProps> = ({
         parsedActivities.push({
           id: idCounter++,
           name: activityName,
-          duration: defaultDuration,
-          preferredTime: defaultTime,
           category: 'leisure',
         });
       }
@@ -96,32 +92,7 @@ start a new book series`}
           onChange={(e) => setActivityText(e.target.value)}
           rows={10}
         />
-        
-        <div className="activity-defaults">
-          <div className="default-setting">
-            <label>Default Duration (minutes):</label>
-            <input
-              type="number"
-              value={defaultDuration}
-              onChange={(e) => setDefaultDuration(parseInt(e.target.value))}
-              min="10"
-              max="240"
-            />
-          </div>
-          <div className="default-setting">
-            <label>Default Time:</label>
-            <select
-              value={defaultTime}
-              onChange={(e) => setDefaultTime(e.target.value as any)}
-            >
-              <option value="any">Any time</option>
-              <option value="morning">Morning</option>
-              <option value="afternoon">Afternoon</option>
-              <option value="evening">Evening</option>
-            </select>
-          </div>
-        </div>
-        
+
         <button type="button" className="btn btn-secondary" onClick={parseActivities}>
           Parse Activities
         </button>
@@ -137,17 +108,17 @@ start a new book series`}
                 <div className="activity-controls">
                   <input
                     type="number"
-                    placeholder="Duration"
-                    value={activity.duration}
+                    placeholder="Duration (AI will detect)"
+                    value={activity.duration ?? ''}
                     min="10"
                     max="240"
                     onChange={(e) => updateActivity(activity.id, 'duration', e.target.value)}
                   />
                   <select
-                    value={activity.preferredTime}
+                    value={activity.preferredTime ?? 'any'}
                     onChange={(e) => updateActivity(activity.id, 'preferredTime', e.target.value)}
                   >
-                    <option value="any">Any time</option>
+                    <option value="any">Any time (AI will detect)</option>
                     <option value="morning">Morning</option>
                     <option value="afternoon">Afternoon</option>
                     <option value="evening">Evening</option>

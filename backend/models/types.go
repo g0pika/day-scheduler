@@ -27,16 +27,36 @@ type SpecialEvent struct {
 }
 
 type ScheduleRequest struct {
-	UserProfile   UserProfile    `json:"user_profile"`
-	Activities    []Activity     `json:"activities"`
-	SelectedCount int            `json:"selected_activity_count"`
-	SpecialEvents []SpecialEvent `json:"special_events"`
-	DayType       string         `json:"day_type"`
-	EnergyLevel   string         `json:"energy_level,omitempty"`
+	UserProfile    UserProfile     `json:"user_profile"`
+	Activities     []Activity      `json:"activities"`
+	SelectedCount  int             `json:"selected_activity_count"`
+	SpecialEvents  []SpecialEvent  `json:"special_events"`
+	DayType        string          `json:"day_type"`
+	EnergyLevel    string          `json:"energy_level,omitempty"`
+	CalendarEvents []CalendarEvent `json:"calendar_events,omitempty"`
+	PromptConfig   *PromptConfig   `json:"prompt_config,omitempty"`
+	StudyPlan      string          `json:"study_plan,omitempty"`
+	ScheduleDate   string          `json:"schedule_date,omitempty"`
+	DayOfWeek      string          `json:"day_of_week,omitempty"`
+}
+
+type CalendarEvent struct {
+	ID          string    `json:"id"`
+	Summary     string    `json:"summary"`
+	Description string    `json:"description,omitempty"`
+	Location    string    `json:"location,omitempty"`
+	Start       EventTime `json:"start"`
+	End         EventTime `json:"end"`
+}
+
+type EventTime struct {
+	DateTime string `json:"dateTime,omitempty"`
+	Date     string `json:"date,omitempty"`
 }
 
 type ScheduleResponse struct {
 	Schedule string `json:"schedule"`
 	Success  bool   `json:"success"`
 	Message  string `json:"message,omitempty"`
+	Prompt   string `json:"prompt,omitempty"`
 }

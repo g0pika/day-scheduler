@@ -10,8 +10,8 @@ export interface UserProfile {
 export interface Activity {
   id: number;
   name: string;
-  duration: number;
-  preferredTime: 'any' | 'morning' | 'afternoon' | 'evening';
+  duration?: number;
+  preferredTime?: 'any' | 'morning' | 'afternoon' | 'evening';
   category: string;
 }
 
@@ -22,6 +22,21 @@ export interface SpecialEvent {
   duration: number;
   prepTime?: number;
   preferredTime?: string;
+}
+
+export interface CalendarEvent {
+  id: string;
+  summary: string;
+  description?: string;
+  location?: string;
+  start: {
+    dateTime?: string;
+    date?: string;
+  };
+  end: {
+    dateTime?: string;
+    date?: string;
+  };
 }
 
 export interface ScheduleRequest {
@@ -36,18 +51,22 @@ export interface ScheduleRequest {
   activities: Array<{
     id: number;
     name: string;
-    duration_minutes: number;
-    preferred_time: string;
+    duration_minutes?: number;
+    preferred_time?: string;
     category: string;
   }>;
   selected_activity_count: number;
   special_events: SpecialEvent[];
-  day_type: string;
+  day_type?: string;
   energy_level?: string;
+  calendar_events?: CalendarEvent[];
+  schedule_date?: string;
+  study_plan?: string;
 }
 
 export interface ScheduleResponse {
   schedule: string;
   success: boolean;
   message?: string;
+  prompt?: string;
 }
