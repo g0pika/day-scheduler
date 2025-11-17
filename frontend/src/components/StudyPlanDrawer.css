@@ -1,0 +1,131 @@
+.study-drawer-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+}
+
+.study-drawer {
+  position: fixed;
+  top: 0;
+  right: -400px;
+  width: 400px;
+  height: 100vh;
+  background-color: var(--bg-secondary);
+  box-shadow: -2px 0 10px var(--card-shadow);
+  transition: right 0.3s ease-in-out;
+  z-index: 1000;
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.study-drawer.open {
+  right: 0;
+}
+
+.study-drawer-header {
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.study-drawer-title {
+  margin: 0;
+  font-size: 24px;
+  color: var(--text-primary);
+}
+
+.study-drawer-close {
+  background: none;
+  border: none;
+  font-size: 28px;
+  cursor: pointer;
+  padding: 5px;
+  color: var(--text-primary);
+  transition: all 0.2s ease;
+}
+
+.study-drawer-close:hover {
+  color: var(--accent-primary);
+  transform: scale(1.2);
+}
+
+.study-drawer-description {
+  margin-bottom: 15px;
+}
+
+.study-drawer-description p {
+  color: var(--text-tertiary);
+  font-size: 14px;
+  margin-bottom: 10px;
+}
+
+.study-drawer-description p.example {
+  color: var(--text-tertiary);
+  font-size: 12px;
+  font-style: italic;
+  opacity: 0.8;
+}
+
+.study-drawer-label {
+  font-weight: bold;
+  margin-bottom: 8px;
+  display: block;
+  color: var(--text-primary);
+}
+
+.study-drawer-textarea {
+  width: 100%;
+  min-height: 300px;
+  padding: 12px;
+  fontSize: 14px;
+  font-family: 'Courier New', monospace;
+  border: 2px solid var(--border-color);
+  border-radius: 8px;
+  resize: vertical;
+  background-color: var(--bg-tertiary);
+  color: var(--text-primary);
+  transition: all 0.3s ease;
+}
+
+.study-drawer-textarea:focus {
+  outline: none;
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.study-drawer-textarea::placeholder {
+  color: var(--text-tertiary);
+  opacity: 0.6;
+}
+
+.study-drawer-tip {
+  margin-top: 20px;
+  padding: 12px;
+  background-color: var(--info-bg);
+  border-radius: 8px;
+  font-size: 13px;
+  color: var(--info-text);
+  border: 1px solid var(--info-border);
+  transition: all 0.3s ease;
+}
+
+.study-drawer-tip strong {
+  color: var(--info-text);
+}
+
+.study-drawer-actions {
+  margin-top: 20px;
+}
+
+.study-drawer-actions .btn {
+  width: 100%;
+}
+
+.study-drawer-actions .btn + .btn {
+  margin-top: 10px;
+}

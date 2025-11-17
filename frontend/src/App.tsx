@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './App.css';
-import { UserProfile, Activity, SpecialEvent, ScheduleRequest, CalendarEvent } from './types';
+import { UserProfile, Activity, SpecialEvent, CalendarEvent } from './types';
 import StepIndicator from './components/StepIndicator';
 import ProfileSetup from './components/ProfileSetup';
 import ActivitiesSetup from './components/ActivitiesSetup';
@@ -11,6 +11,28 @@ import StudyPlanDrawer from './components/StudyPlanDrawer';
 import CalendarView from './components/CalendarView';
 
 function App() {
+  // Initialize dark mode as default, check localStorage for preference
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    const savedTheme = localStorage.getItem('theme');
+    // Default to dark mode if no preference is saved
+    return savedTheme ? savedTheme === 'dark' : true;
+  });
+
+  // Apply theme to body element
+  useEffect(() => {
+    if (isDarkMode) {
+      document.body.classList.add('dark-mode');
+      localStorage.setItem('theme', 'dark');
+    } else {
+      document.body.classList.remove('dark-mode');
+      localStorage.setItem('theme', 'light');
+    }
+  }, [isDarkMode]);
+
+  const toggleTheme = () => {
+    setIsDarkMode(!isDarkMode);
+  };
+
   const [currentStep, setCurrentStep] = useState(1);
   const [userProfile, setUserProfile] = useState<UserProfile>({
     workHours: 6,
@@ -56,12 +78,13 @@ function App() {
     setIsLoading(true);
     setError('');
     setSchedule('');
-    
+
     if (currentStep !== 5) {
       setCurrentStep(5);
     }
 
-    const requestData: ScheduleRequest = {
+    // Use user's actual inputs from ProfileSetup
+    const requestData = {
       user_profile: {
         work_hours: userProfile.workHours,
         study_hours: userProfile.studyHours,
@@ -70,25 +93,14 @@ function App() {
         is_female: userProfile.isFemale,
         cycle_phase: userProfile.cyclePhase,
       },
-      activities: activities
-        .filter(a => a.name.trim() !== '')
-        .map(a => ({
-          id: a.id,
-          name: a.name,
-          duration_minutes: a.duration,
-          preferred_time: a.preferredTime,
-          category: a.category,
-        })),
-      selected_activity_count: selectedActivityCount,
-      special_events: specialEvents,
-      energy_level: energyLevel,
       calendar_events: calendarEvents,
+      energy_level: energyLevel,
       schedule_date: scheduleDate,
       study_plan: studyPlan,
     };
 
     try {
-      const response = await fetch('http://localhost:8080/api/generate-schedule', {
+      const response = await fetch('http://localhost:8080/api/auto-generate-schedule', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -126,36 +138,70 @@ function App() {
   };
 
   const formatDateDisplay = (dateStr: string) => {
-    const date = new Date(dateStr);
-    const dayName = date.toLocaleDateString('en-US', { weekday: 'long' });
-    const monthName = date.toLocaleDateString('en-US', { month: 'long' });
-    const day = date.getDate();
-    const year = date.getFullYear();
-    return `${dayName}, ${monthName} ${day}, ${year}`;
+    if (!dateStr) return 'No date selected';
+    try {
+      const date = new Date(dateStr + 'T00:00:00'); // Force timezone to avoid date shifts
+      if (isNaN(date.getTime())) return 'Invalid date';
+      const dayName = date.toLocaleDateString('en-US', { weekday: 'long' });
+      const monthName = date.toLocaleDateString('en-US', { month: 'long' });
+      const day = date.getDate();
+      const year = date.getFullYear();
+      return `${dayName}, ${monthName} ${day}, ${year}`;
+    } catch (error) {
+      console.error('Error formatting date:', error);
+      return 'Error formatting date';
+    }
   };
 
   return (
     <div className="App">
-      {/* Calendar Sidebar - Always visible */}
-      <div
-        style={{
-          position: 'fixed',
-          left: '20px',
-          top: '50%',
-          transform: 'translateY(-50%)',
-          zIndex: 500,
-        }}
-      >
+      {/* Calendar Sidebar */}
+      <div className="sidebar-calendar">
         <CalendarView selectedDate={scheduleDate} onDateSelect={handleDateSelect} />
-        <div style={{ marginTop: '15px', textAlign: 'center', fontSize: '14px', color: 'white', backgroundColor: 'rgba(0,0,0,0.3)', padding: '10px', borderRadius: '8px' }}>
+        <div className="selected-date-display">
           <strong>Scheduling for:</strong>
-          <br />
-          {formatDateDisplay(scheduleDate)}
+          <div style={{ marginTop: '8px', fontSize: '13px' }}>
+            {formatDateDisplay(scheduleDate)}
+          </div>
         </div>
       </div>
 
       <div className="container">
         <div className="header">
+          {/* Theme Toggle Button */}
+          <button
+            onClick={toggleTheme}
+            style={{
+              position: 'absolute',
+              top: '20px',
+              right: '20px',
+              width: '45px',
+              height: '45px',
+              borderRadius: '50%',
+              backgroundColor: 'rgba(255, 255, 255, 0.2)',
+              color: 'white',
+              border: 'none',
+              fontSize: '22px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'all 0.3s ease',
+              backdropFilter: 'blur(10px)',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.3)';
+              e.currentTarget.style.transform = 'scale(1.1)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.2)';
+              e.currentTarget.style.transform = 'scale(1)';
+            }}
+            title={isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+          >
+            {isDarkMode ? '☀️' : '🌙'}
+          </button>
+
           <h1>🗓️ Smart Day Scheduler</h1>
           <p>AI-powered personalized daily planning</p>
         </div>

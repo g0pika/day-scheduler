@@ -1,4 +1,5 @@
 import React from 'react';
+import './StudyPlanDrawer.css';
 
 interface StudyPlanDrawerProps {
   isOpen: boolean;
@@ -17,94 +18,48 @@ const StudyPlanDrawer: React.FC<StudyPlanDrawerProps> = ({
     <>
       {/* Overlay */}
       {isOpen && (
-        <div
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.5)',
-            zIndex: 999,
-          }}
-          onClick={onClose}
-        />
+        <div className="study-drawer-overlay" onClick={onClose} />
       )}
 
       {/* Side Drawer */}
-      <div
-        style={{
-          position: 'fixed',
-          top: 0,
-          right: isOpen ? 0 : '-400px',
-          width: '400px',
-          height: '100vh',
-          backgroundColor: 'white',
-          boxShadow: '-2px 0 10px rgba(0, 0, 0, 0.1)',
-          transition: 'right 0.3s ease-in-out',
-          zIndex: 1000,
-          padding: '20px',
-          overflowY: 'auto',
-        }}
-      >
-        <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <h2 style={{ margin: 0, fontSize: '24px' }}>📚 Customize Study Plan</h2>
-          <button
-            onClick={onClose}
-            style={{
-              background: 'none',
-              border: 'none',
-              fontSize: '28px',
-              cursor: 'pointer',
-              padding: '5px',
-            }}
-          >
+      <div className={`study-drawer ${isOpen ? 'open' : ''}`}>
+        <div className="study-drawer-header">
+          <h2 className="study-drawer-title">📚 Customize Study Plan</h2>
+          <button onClick={onClose} className="study-drawer-close">
             ×
           </button>
         </div>
 
-        <div style={{ marginBottom: '15px' }}>
-          <p style={{ color: '#666', fontSize: '14px', marginBottom: '10px' }}>
+        <div className="study-drawer-description">
+          <p>
             Enter what you want to study today. You can paste topics, chapters, or specific goals.
           </p>
-          <p style={{ color: '#888', fontSize: '12px', fontStyle: 'italic' }}>
+          <p className="example">
             Example: "Data Structures: Trees & Graphs", "Algorithms: Dynamic Programming practice problems", etc.
           </p>
         </div>
 
         <div className="form-group">
-          <label style={{ fontWeight: 'bold', marginBottom: '8px', display: 'block' }}>
+          <label className="study-drawer-label">
             Today's Study Topics
           </label>
           <textarea
             value={studyPlan}
             onChange={(e) => setStudyPlan(e.target.value)}
             placeholder="Paste or type your study topics here...&#10;&#10;For example:&#10;- Data Structures: Binary Trees&#10;- Algorithms: Sorting (Quick & Merge)&#10;- Practice: 5 coding problems&#10;- Review: Previous week's notes"
-            style={{
-              width: '100%',
-              minHeight: '300px',
-              padding: '12px',
-              fontSize: '14px',
-              fontFamily: 'monospace',
-              border: '1px solid #ddd',
-              borderRadius: '5px',
-              resize: 'vertical',
-            }}
+            className="study-drawer-textarea"
           />
         </div>
 
-        <div style={{ marginTop: '20px' }}>
-          <div style={{ padding: '12px', backgroundColor: '#e3f2fd', borderRadius: '5px', fontSize: '13px' }}>
-            <strong>💡 Tip:</strong> The AI will incorporate these topics into your schedule during your best study time (6-9 AM) and other study blocks.
-          </div>
+        <div className="study-drawer-tip">
+          <strong>💡 Tip:</strong> The AI will incorporate these topics into your schedule during your best study time (6-9 AM) and other study blocks.
         </div>
 
-        <div style={{ marginTop: '20px' }}>
+        <div className="study-drawer-actions">
           <button
             type="button"
             className="btn"
             onClick={onClose}
-            style={{ width: '100%' }}
           >
             ✓ Save Study Plan
           </button>
@@ -113,7 +68,6 @@ const StudyPlanDrawer: React.FC<StudyPlanDrawerProps> = ({
               type="button"
               className="btn btn-secondary"
               onClick={() => setStudyPlan('')}
-              style={{ width: '100%', marginTop: '10px' }}
             >
               Clear
             </button>

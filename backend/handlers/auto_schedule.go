@@ -8,7 +8,6 @@ import (
 	"time"
 )
 
-// IST timezone location
 var istLocation *time.Location
 
 func init() {
@@ -20,20 +19,14 @@ func init() {
 	}
 }
 
-// AutoGenerateScheduleRequest is the request for auto-generating tomorrow's schedule
 type AutoGenerateScheduleRequest struct {
-	UserProfile    models.UserProfile     `json:"user_profile"`    // Basic user info (cycle phase, energy level)
-	CalendarEvents []models.CalendarEvent `json:"calendar_events"` // Google Calendar events
+	UserProfile    models.UserProfile     `json:"user_profile"`
+	CalendarEvents []models.CalendarEvent `json:"calendar_events"`
 	EnergyLevel    string                 `json:"energy_level,omitempty"`
+	ScheduleDate   string                 `json:"schedule_date,omitempty"`
+	StudyPlan      string                 `json:"study_plan,omitempty"`
 }
 
-// AutoGenerateSchedule automatically generates a schedule for tomorrow
-// It automatically:
-// - Detects tomorrow's day in IST timezone
-// - Retrieves the day config (work hours, study hours, chores)
-// - Auto-injects special events based on day type (commute, GATE test, etc.)
-// - Uses the provided calendar events
-// - Generates the schedule using Gemini AI
 func AutoGenerateSchedule(w http.ResponseWriter, r *http.Request) {
 	log.Println("AutoGenerateSchedule called")
 	w.Header().Set("Content-Type", "application/json")
@@ -53,37 +46,62 @@ func AutoGenerateSchedule(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer r.Body.Close()
-	log.Printf("Request decoded: UserProfile=%+v, CalendarEvents=%d", req.UserProfile, len(req.CalendarEvents))
+	log.Printf("Request decoded: UserProfile=%+v, CalendarEvents=%d, ScheduleDate=%s", req.UserProfile, len(req.CalendarEvents), req.ScheduleDate)
 
-	// Get tomorrow's date in IST
+	var targetDate time.Time
 	nowIST := time.Now().In(istLocation)
-	tomorrowIST := nowIST.Add(24 * time.Hour)
-	tomorrowDayOfWeek := tomorrowIST.Weekday()
+
+	if req.ScheduleDate != "" {
+		parsedDate, err := time.Parse("2006-01-02", req.ScheduleDate)
+		if err != nil {
+			log.Printf("Invalid schedule_date format: %v", err)
+			writeErrorResponse(w, http.StatusBadRequest, "Invalid schedule_date format. Use YYYY-MM-DD")
+			return
+		}
+		targetDate = time.Date(parsedDate.Year(), parsedDate.Month(), parsedDate.Day(), 0, 0, 0, 0, istLocation)
+	} else {
+		targetDate = nowIST.Add(24 * time.Hour)
+	}
+
+	targetDayOfWeek := targetDate.Weekday()
 
 	log.Printf("Current IST time: %s", nowIST.Format("2006-01-02 15:04:05 MST"))
-	log.Printf("Tomorrow IST date: %s, Day: %s", tomorrowIST.Format("2006-01-02"), tomorrowDayOfWeek.String())
+	log.Printf("Target date: %s, Day: %s", targetDate.Format("2006-01-02"), targetDayOfWeek.String())
 
-	// Build the schedule request using weekly config (thread-safe read)
+	dayType := models.GetDayType(targetDayOfWeek)
+	specialEvents := models.GetSpecialEventsForDay(dayType)
+
 	weeklyConfigMutex.RLock()
-	scheduleRequest := weeklyConfig.BuildScheduleRequestForDay(tomorrowIST, req.UserProfile, req.CalendarEvents)
+	activities := weeklyConfig.ActivitiesList
+	selectedCount := weeklyConfig.SelectedActivityCount
+	promptConfig := weeklyConfig.BasePromptConfig
 	weeklyConfigMutex.RUnlock()
 
-	scheduleRequest.EnergyLevel = req.EnergyLevel
-	scheduleRequest.ScheduleDate = tomorrowIST.Format("2006-01-02")
-	scheduleRequest.DayOfWeek = tomorrowDayOfWeek.String()
+	scheduleRequest := models.ScheduleRequest{
+		UserProfile:    req.UserProfile,
+		Activities:     activities,
+		SelectedCount:  selectedCount,
+		SpecialEvents:  specialEvents,
+		DayType:        string(dayType),
+		EnergyLevel:    req.EnergyLevel,
+		CalendarEvents: req.CalendarEvents,
+		ScheduleDate:   targetDate.Format("2006-01-02"),
+		DayOfWeek:      targetDayOfWeek.String(),
+		StudyPlan:      req.StudyPlan,
+		PromptConfig:   &promptConfig,
+	}
 
-	log.Printf("Schedule request built for %s: Work=%d hrs, Study=%d hrs, Chores=%d, Special Events=%d",
-		tomorrowDayOfWeek.String(),
+	log.Printf("Schedule request built for %s: Work=%d hrs, Study=%d hrs, Chores=%d, Special Events=%d, StudyPlan=%v",
+		targetDayOfWeek.String(),
 		scheduleRequest.UserProfile.WorkHours,
 		scheduleRequest.UserProfile.StudyHours,
 		scheduleRequest.UserProfile.HouseholdChores,
-		len(scheduleRequest.SpecialEvents))
+		len(scheduleRequest.SpecialEvents),
+		req.StudyPlan != "")
 
-	// Build prompt for Gemini AI
 	prompt := buildGeminiPrompt(scheduleRequest)
 	log.Printf("Prompt built (length: %d chars)", len(prompt))
 
-	// Call Gemini API
 	schedule, err := callGeminiAPI(prompt)
 	if err != nil {
 		log.Printf("Gemini API error: %v", err)
@@ -96,16 +114,16 @@ func AutoGenerateSchedule(w http.ResponseWriter, r *http.Request) {
 		Schedule      string `json:"schedule"`
 		Success       bool   `json:"success"`
 		Message       string `json:"message"`
-		ScheduledDate string `json:"scheduled_date"` // Tomorrow's date
-		DayOfWeek     string `json:"day_of_week"`    // Tomorrow's day name
-		DayType       string `json:"day_type"`       // Day type (regular, office_day, etc.)
-		Prompt        string `json:"prompt"`         // The AI prompt used
+		ScheduledDate string `json:"scheduled_date"`
+		DayOfWeek     string `json:"day_of_week"`
+		DayType       string `json:"day_type"`
+		Prompt        string `json:"prompt"`
 	}{
 		Schedule:      schedule,
 		Success:       true,
-		Message:       "Schedule generated successfully for " + tomorrowDayOfWeek.String(),
-		ScheduledDate: tomorrowIST.Format("2006-01-02"),
-		DayOfWeek:     tomorrowDayOfWeek.String(),
+		Message:       "Schedule generated successfully for " + targetDayOfWeek.String(),
+		ScheduledDate: targetDate.Format("2006-01-02"),
+		DayOfWeek:     targetDayOfWeek.String(),
 		DayType:       scheduleRequest.DayType,
 		Prompt:        prompt,
 	}
@@ -116,7 +134,6 @@ func AutoGenerateSchedule(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// GetTomorrowInfo returns information about tomorrow (for debugging/testing)
 func GetTomorrowInfo(w http.ResponseWriter, r *http.Request) {
 	log.Println("GetTomorrowInfo called")
 	w.Header().Set("Content-Type", "application/json")
@@ -126,13 +143,11 @@ func GetTomorrowInfo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Get tomorrow's date in IST
 	nowIST := time.Now().In(istLocation)
 	tomorrowIST := nowIST.Add(24 * time.Hour)
 	tomorrowDayOfWeek := tomorrowIST.Weekday()
 	dayType := models.GetDayType(tomorrowDayOfWeek)
 
-	// Thread-safe read of weekly config
 	weeklyConfigMutex.RLock()
 	dayConfig := weeklyConfig.GetConfigForDay(tomorrowDayOfWeek)
 	weeklyConfigMutex.RUnlock()

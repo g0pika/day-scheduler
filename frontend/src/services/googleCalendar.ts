@@ -9,6 +9,12 @@ let gisInited = false;
 let tokenClient: any;
 
 export const initializeGoogleAPI = async (): Promise<void> => {
+  // Skip initialization if no client ID is configured
+  if (!GOOGLE_CLIENT_ID) {
+    console.warn('Google Calendar integration skipped: REACT_APP_GOOGLE_CLIENT_ID not configured');
+    return Promise.resolve();
+  }
+
   return new Promise((resolve, reject) => {
     // Load the Google API client
     if (!window.gapi) {
@@ -24,15 +30,21 @@ export const initializeGoogleAPI = async (): Promise<void> => {
 };
 
 const loadGapi = (resolve: () => void, reject: (error: any) => void) => {
+  if (!GOOGLE_CLIENT_ID) {
+    resolve();
+    return;
+  }
+
   window.gapi.load('client', async () => {
     try {
       await window.gapi.client.init({
-        apiKey: '', 
+        apiKey: '',
         discoveryDocs: [CALENDAR_API_DISCOVERY_DOC],
       });
       gapiInited = true;
       maybeEnableButtons(resolve);
     } catch (error) {
+      console.error('Failed to initialize Google API client:', error);
       reject(error);
     }
   });
@@ -42,7 +54,10 @@ const loadGapi = (resolve: () => void, reject: (error: any) => void) => {
     const gisScript = document.createElement('script');
     gisScript.src = 'https://accounts.google.com/gsi/client';
     gisScript.onload = () => initializeGIS(resolve);
-    gisScript.onerror = reject;
+    gisScript.onerror = (error) => {
+      console.error('Failed to load Google Identity Services:', error);
+      reject(error);
+    };
     document.body.appendChild(gisScript);
   } else {
     initializeGIS(resolve);
@@ -50,13 +65,23 @@ const loadGapi = (resolve: () => void, reject: (error: any) => void) => {
 };
 
 const initializeGIS = (resolve: () => void) => {
-  tokenClient = window.google.accounts.oauth2.initTokenClient({
-    client_id: GOOGLE_CLIENT_ID,
-    scope: SCOPES,
-    callback: '', // Will be set per request
-  });
-  gisInited = true;
-  maybeEnableButtons(resolve);
+  if (!GOOGLE_CLIENT_ID) {
+    resolve();
+    return;
+  }
+
+  try {
+    tokenClient = window.google.accounts.oauth2.initTokenClient({
+      client_id: GOOGLE_CLIENT_ID,
+      scope: SCOPES,
+      callback: '', // Will be set per request
+    });
+    gisInited = true;
+    maybeEnableButtons(resolve);
+  } catch (error) {
+    console.error('Failed to initialize Google Identity Services:', error);
+    resolve(); // Resolve anyway to not block the app
+  }
 };
 
 const maybeEnableButtons = (resolve: () => void) => {

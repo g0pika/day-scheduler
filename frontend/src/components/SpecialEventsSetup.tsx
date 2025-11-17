@@ -41,14 +41,15 @@ const SpecialEventsSetup: React.FC<SpecialEventsSetupProps> = ({
   const [classDuration, setClassDuration] = useState(120);
 
   useEffect(() => {
-    // Initialize Google API when component mounts
+    // Initialize Google API when component mounts (optional)
     initializeGoogleAPI()
       .then(() => {
         setGoogleApiReady(true);
       })
       .catch((error) => {
         console.error('Failed to initialize Google API:', error);
-        setCalendarError('Failed to initialize Google Calendar integration');
+        // Don't set error - just silently disable the feature
+        setGoogleApiReady(false);
       });
   }, []);
 

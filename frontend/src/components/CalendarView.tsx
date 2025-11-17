@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import './CalendarView.css';
 
 interface CalendarViewProps {
   selectedDate: string;
@@ -66,30 +67,15 @@ const CalendarView: React.FC<CalendarViewProps> = ({ selectedDate, onDateSelect 
       const selected = isSelectedDate(day);
       const today = isToday(day);
 
+      let className = 'calendar-day';
+      if (selected) className += ' selected';
+      else if (today) className += ' today';
+
       days.push(
         <div
           key={day}
           onClick={() => handleDateClick(day)}
-          style={{
-            padding: '10px',
-            textAlign: 'center',
-            cursor: 'pointer',
-            borderRadius: '50%',
-            backgroundColor: selected ? '#5469d4' : today ? '#e3f2fd' : 'transparent',
-            color: selected ? 'white' : today ? '#5469d4' : '#333',
-            fontWeight: selected || today ? 'bold' : 'normal',
-            transition: 'all 0.2s',
-          }}
-          onMouseEnter={(e) => {
-            if (!selected) {
-              e.currentTarget.style.backgroundColor = '#f5f5f5';
-            }
-          }}
-          onMouseLeave={(e) => {
-            if (!selected) {
-              e.currentTarget.style.backgroundColor = today ? '#e3f2fd' : 'transparent';
-            }
-          }}
+          className={className}
         >
           {day}
         </div>
@@ -100,121 +86,42 @@ const CalendarView: React.FC<CalendarViewProps> = ({ selectedDate, onDateSelect 
   };
 
   return (
-    <div
-      style={{
-        backgroundColor: 'white',
-        borderRadius: '10px',
-        padding: '20px',
-        boxShadow: '0 2px 10px rgba(0, 0, 0, 0.1)',
-        maxWidth: '350px',
-        margin: '0 auto',
-      }}
-    >
+    <div className="calendar-container">
       {/* Calendar Header */}
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: '20px',
-        }}
-      >
-        <button
-          onClick={previousMonth}
-          style={{
-            background: 'none',
-            border: 'none',
-            fontSize: '20px',
-            cursor: 'pointer',
-            padding: '5px 10px',
-          }}
-        >
+      <div className="calendar-header">
+        <button onClick={previousMonth} className="calendar-nav-btn">
           ←
         </button>
-        <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 'bold' }}>
+        <h3 className="calendar-month-title">
           {monthNames[month]} {year}
         </h3>
-        <button
-          onClick={nextMonth}
-          style={{
-            background: 'none',
-            border: 'none',
-            fontSize: '20px',
-            cursor: 'pointer',
-            padding: '5px 10px',
-          }}
-        >
+        <button onClick={nextMonth} className="calendar-nav-btn">
           →
         </button>
       </div>
 
       {/* Day Names */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(7, 1fr)',
-          gap: '5px',
-          marginBottom: '10px',
-        }}
-      >
+      <div className="calendar-day-names">
         {dayNames.map((day) => (
-          <div
-            key={day}
-            style={{
-              textAlign: 'center',
-              fontSize: '12px',
-              fontWeight: 'bold',
-              color: '#666',
-              padding: '5px',
-            }}
-          >
+          <div key={day} className="calendar-day-name">
             {day}
           </div>
         ))}
       </div>
 
       {/* Calendar Days */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(7, 1fr)',
-          gap: '5px',
-        }}
-      >
+      <div className="calendar-days-grid">
         {renderCalendarDays()}
       </div>
 
       {/* Legend */}
-      <div
-        style={{
-          marginTop: '20px',
-          fontSize: '12px',
-          color: '#666',
-          display: 'flex',
-          gap: '15px',
-          justifyContent: 'center',
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-          <div
-            style={{
-              width: '12px',
-              height: '12px',
-              borderRadius: '50%',
-              backgroundColor: '#e3f2fd',
-            }}
-          />
+      <div className="calendar-legend">
+        <div className="calendar-legend-item">
+          <div className="calendar-legend-dot today" />
           <span>Today</span>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-          <div
-            style={{
-              width: '12px',
-              height: '12px',
-              borderRadius: '50%',
-              backgroundColor: '#5469d4',
-            }}
-          />
+        <div className="calendar-legend-item">
+          <div className="calendar-legend-dot selected" />
           <span>Selected</span>
         </div>
       </div>
